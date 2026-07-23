@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -81,14 +82,15 @@ export default function ListPropertyPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
+  const { data: session } = useSession();
+  
   useEffect(() => {
-    const savedUser = localStorage.getItem('aangan_user');
-    if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-      } catch (e) {}
+    if (session?.user) {
+      setCurrentUser(session.user);
+    } else {
+      setCurrentUser(null);
     }
-  }, []);
+  }, [session]);
 
   const finalLocation = location === 'Other' ? (customLocality || 'Kolhapur') : location;
   const finalImage = customImageUrl.trim() || selectedImage;

@@ -72,9 +72,14 @@ model Lead {
   propertyId String
   sellerId   String
   status     String   @default("New")
-  buyerId    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  buyerId      String?
+  source       String    @default("contact")
+  stage        String    @default("New Lead")
+  notes        String?
+  followupDate DateTime?
+  clientBudget Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   property   Property @relation(fields: [propertyId], references: [id])
   seller     User     @relation("SellerLeads", fields: [sellerId], references: [id])

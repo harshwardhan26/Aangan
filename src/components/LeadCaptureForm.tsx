@@ -27,6 +27,14 @@ export default function LeadCaptureForm({ propertyId, sellerId }: { propertyId: 
 
   const submitLead = async (buyerId?: string) => {
     setLoading(true);
+    let clientBudget = null;
+    try {
+      const storedBudget = localStorage.getItem('aangan_user_budget');
+      if (storedBudget) {
+        clientBudget = parseInt(storedBudget, 10);
+      }
+    } catch (e) {}
+
     const res = await submitLeadAction({
       name,
       phone,
@@ -34,6 +42,8 @@ export default function LeadCaptureForm({ propertyId, sellerId }: { propertyId: 
       propertyId,
       sellerId,
       buyerId: buyerId || user?.id,
+      source: 'contact',
+      clientBudget: clientBudget && !isNaN(clientBudget) ? clientBudget : null,
     });
 
     setLoading(false);

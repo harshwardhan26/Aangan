@@ -119,6 +119,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       redirect: false,
       phone,
       otp: fullCode,
+      role: userRole,
+      name: mode === 'signup' ? fullName : undefined,
+      email: mode === 'signup' ? email : undefined,
     });
     
     setIsOtpLoading(false);

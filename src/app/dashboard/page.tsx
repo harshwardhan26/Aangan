@@ -128,6 +128,13 @@ export default function DashboardPage() {
             >
               My Leads <span style={{ background: '#ef4444', color: 'white', borderRadius: '10px', padding: '2px 8px', fontSize: '0.8rem', marginLeft: '5px' }}>{leads.length}</span>
             </button>
+            <Link 
+              href="/dashboard/clients" 
+              className="auth-tab" 
+              style={{ textDecoration: 'none', color: 'inherit', background: 'none', border: 'none', padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer', borderBottom: '3px solid transparent', fontWeight: '400' }}
+            >
+              Client Tracker
+            </Link>
           </div>
         ) : (
           <div className="dashboard-tabs" style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--border)', marginBottom: '30px' }}>

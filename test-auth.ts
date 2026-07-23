@@ -1,2 +1,2 @@
-import { authOptions } from "./src/app/api/auth/[...nextauth]/route";
+import { authOptions } from "./src/lib/auth";
 console.log(authOptions);

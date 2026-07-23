@@ -89,6 +89,15 @@ export async function createPropertyAction(data: CreatePropertyInput) {
     };
   } catch (error: any) {
     console.error('Error creating property:', error);
+    
+    // P2003 is Prisma's Foreign Key Constraint Violation code
+    if (error.code === 'P2003') {
+      return {
+        success: false,
+        error: 'Your session appears to be invalid or your account was deleted. Please log out and log back in.',
+      };
+    }
+
     return {
       success: false,
       error: error.message || 'Failed to post property. Please try again.',

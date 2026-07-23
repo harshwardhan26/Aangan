@@ -12,6 +12,8 @@ const LeadSchema = z.object({
   propertyId: z.string(),
   sellerId: z.string(),
   buyerId: z.string().optional(),
+  source: z.string().optional(),
+  clientBudget: z.number().optional().nullable(),
 });
 
 export async function submitLeadAction(data: {
@@ -21,6 +23,8 @@ export async function submitLeadAction(data: {
   propertyId: string;
   sellerId: string;
   buyerId?: string;
+  source?: string;
+  clientBudget?: number | null;
 }) {
   try {
     const validatedData = LeadSchema.safeParse(data);
@@ -32,14 +36,42 @@ export async function submitLeadAction(data: {
       };
     }
 
+    const { name, phone, email, propertyId, sellerId, buyerId, source, clientBudget } = validatedData.data;
+
+    // Check for existing lead to prevent duplicates
+    let existingLead;
+    if (buyerId) {
+      existingLead = await prisma.lead.findFirst({
+        where: { buyerId, propertyId }
+      });
+    } else {
+      existingLead = await prisma.lead.findFirst({
+        where: { phone, propertyId }
+      });
+    }
+
+    if (existingLead) {
+      // Update timestamp and potentially budget/source if we want to bubble it up
+      const updatedLead = await prisma.lead.update({
+        where: { id: existingLead.id },
+        data: {
+          updatedAt: new Date(),
+          source: existingLead.source === 'like' && source === 'contact' ? 'contact' : undefined, // upgrade like to contact
+        }
+      });
+      return { success: true, lead: updatedLead };
+    }
+
     const lead = await prisma.lead.create({
       data: {
-        name: validatedData.data.name,
-        phone: validatedData.data.phone,
-        email: validatedData.data.email || null,
-        propertyId: validatedData.data.propertyId,
-        sellerId: validatedData.data.sellerId,
-        buyerId: validatedData.data.buyerId || null,
+        name,
+        phone,
+        email: email || null,
+        propertyId,
+        sellerId,
+        buyerId: buyerId || null,
+        source: source || 'contact',
+        clientBudget: clientBudget || null,
       },
     });
 
@@ -53,6 +85,33 @@ export async function submitLeadAction(data: {
       success: false,
       error: 'Failed to submit lead.',
     };
+  }
+}
+
+export async function updateLeadAction(leadId: string, data: { stage?: string; notes?: string | null; followupDate?: Date | null }) {
+  try {
+    const updatedLead = await prisma.lead.update({
+      where: { id: leadId },
+      data
+    });
+    revalidatePath('/dashboard/clients');
+    return { success: true, lead: updatedLead };
+  } catch (error: any) {
+    console.error('Error updating lead:', error);
+    return { success: false, error: 'Failed to update lead.' };
+  }
+}
+
+export async function deleteLeadAction(leadId: string) {
+  try {
+    await prisma.lead.delete({
+      where: { id: leadId }
+    });
+    revalidatePath('/dashboard/clients');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting lead:', error);
+    return { success: false, error: 'Failed to delete lead.' };
   }
 }
 

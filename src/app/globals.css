@@ -125,6 +125,12 @@ button:active {
 .btn-primary {
     background-color: var(--primary);
     color: white;
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    text-align: center;
+    transition: var(--transition);
 }
 
 .btn-primary:hover {
@@ -137,6 +143,11 @@ button:active {
     border: 1px solid rgba(250, 90, 90, 0.2);
     color: var(--primary);
     font-weight: 500;
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    text-align: center;
+    transition: var(--transition);
 }
 
 .btn-outline:hover {
@@ -3265,4 +3276,158 @@ footer {
     min-width: 200px;
     padding: 14px 24px;
     font-size: 1.05rem;
+}
+/* ==========================================================================
+   Login Modal Missing Styles
+   ========================================================================== */
+
+.auth-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-top: 15px;
+}
+
+.auth-tab {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    padding: 10px 5px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+.auth-tab:hover {
+    color: var(--dark);
+}
+
+.auth-tab.active {
+    color: var(--primary);
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary);
+}
+
+.auth-error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #ef4444;
+    padding: 12px 15px;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.auth-submit-btn {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 15px;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+    background: #e04545;
+}
+
+.auth-submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 25px 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border);
+}
+
+.auth-divider span {
+    padding: 0 15px;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.google-auth-btn {
+    width: 100%;
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--dark);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.google-auth-btn:hover:not(:disabled) {
+    background: var(--light);
+    border-color: #cbd5e1;
+}
+
+.google-auth-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--dark);
+    display: flex;
+    justify-content: space-between;
+}
+
+.req-star {
+    color: var(--primary);
+}
+
+.opt-tag {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.8rem;
+}
+
+.dev-otp-hint {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    margin-top: 10px;
+    border: 1px dashed #cbd5e1;
 }

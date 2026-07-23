@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,14 @@ export default function HeroCalculator() {
   const [calcCustomRate, setCalcCustomRate] = useState('');
   const [calcBudget, setCalcBudget] = useState('5000000');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('aangan_user_budget', calcBudget);
+    } catch (e) {
+      // ignore
+    }
+  }, [calcBudget]);
 
   const localityMap: { [key: string]: string } = {
     '6200': 'Tarabai Park',

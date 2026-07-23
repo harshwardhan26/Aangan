@@ -30,11 +30,41 @@ export async function toggleSavedPropertyAction(userId: string, propertyId: stri
           propertyId,
         }
       });
+      
+      // Attempt to create a lead for the save (if it doesn't already exist)
+      const property = await prisma.property.findUnique({ where: { id: propertyId }});
+      if (property && property.sellerId) {
+        const existingLead = await prisma.lead.findFirst({
+          where: { buyerId: userId, propertyId }
+        });
+        
+        if (!existingLead) {
+          const user = await prisma.user.findUnique({ where: { id: userId } });
+          if (user) {
+            await prisma.lead.create({
+              data: {
+                name: user.name || 'Anonymous Buyer',
+                phone: user.phone || 'No phone',
+                email: user.email || null,
+                propertyId,
+                sellerId: property.sellerId,
+                buyerId: userId,
+                source: 'like',
+                stage: 'New Lead'
+              }
+            });
+          }
+        }
+      }
+      
       return { success: true, isSaved: true };
     }
   } catch (error: any) {
     console.error('Error toggling saved property:', error);
-    return { success: false, error: 'Failed to toggle saved property.' };
+    if (error.code === 'P2003') {
+      return { success: false, error: 'Your session appears to be invalid. Please log out and log back in.' };
+    }
+    return { success: false, error: 'Failed to update saved property.' };
   }
 }
 
