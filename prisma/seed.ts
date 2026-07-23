@@ -206,14 +206,32 @@ const properties = [
 ];
 
 async function main() {
-  console.log(`Clearing existing properties...`)
+  console.log(`Clearing existing properties and users...`)
+  await prisma.lead.deleteMany({});
+  await prisma.savedProperty.deleteMany({});
   await prisma.property.deleteMany({});
+  
+  // Create a dummy seller
+  let dummySeller = await prisma.user.findUnique({ where: { phone: '0000000000' } });
+  if (!dummySeller) {
+    dummySeller = await prisma.user.create({
+      data: {
+        name: 'Aangan Seed Seller',
+        phone: '0000000000',
+        email: 'seller@aangan.com',
+        role: 'seller'
+      }
+    });
+  }
   
   console.log(`Start seeding 15 realistic properties...`)
   
   for (const p of properties) {
     await prisma.property.create({
-      data: p,
+      data: {
+        ...p,
+        sellerId: dummySeller.id
+      },
     });
   }
   
