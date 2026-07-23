@@ -5,16 +5,32 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { processVoiceCommand } from '@/actions/voice';
 
+type Message = { role: 'user' | 'assistant', content: string };
+
 export default function VoiceAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [inputText, setInputText] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [answer, setAnswer] = useState('');
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: 'Hello! I am Aangan AI. How can I help you today?' }
+  ]);
   const [isSupported, setIsSupported] = useState(false);
   
   const router = useRouter();
   const recognitionRef = useRef<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isOpen, processing, transcript]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -24,7 +40,6 @@ export default function VoiceAssistant() {
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = false;
         recognitionRef.current.interimResults = true;
-        // Setting to mr-IN allows recognition of Marathi, Hindi, and English (with Indian accent)
         recognitionRef.current.lang = 'mr-IN';
 
         recognitionRef.current.onstart = () => {
@@ -41,7 +56,9 @@ export default function VoiceAssistant() {
         };
 
         recognitionRef.current.onerror = (event: any) => {
-          console.error("Speech recognition error", event.error);
+          if (event.error !== 'no-speech' && event.error !== 'aborted') {
+            console.error("Speech recognition error", event.error);
+          }
           setIsListening(false);
         };
 
@@ -53,29 +70,36 @@ export default function VoiceAssistant() {
   }, []);
 
   useEffect(() => {
-    // Process when listening stops and we have a transcript
     if (!isListening && isOpen && transcript.trim().length > 0 && !processing) {
-      handleProcessCommand(transcript);
+      const textToProcess = transcript.trim();
+      setTranscript(''); 
+      handleUserSubmit(textToProcess);
     }
   }, [isListening, transcript, isOpen, processing]);
 
-  const handleProcessCommand = async (text: string) => {
+  const handleUserSubmit = async (text: string) => {
+    if (!text.trim() || processing) return;
+    
+    const historyToPass = [...messages];
+    
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
+    setInputText('');
     setProcessing(true);
-    setAnswer('');
+
     try {
-      const response = await processVoiceCommand(text);
+      const response = await processVoiceCommand(text, historyToPass);
       
+      let aiResponseText = "";
+
       if (response.intent === 'NAVIGATE' && response.navigationTarget) {
-        setAnswer('Navigating...');
+        aiResponseText = `Navigating to ${response.navigationTarget}...`;
         setTimeout(() => {
           router.push(response.navigationTarget!);
           setIsOpen(false);
-          setTranscript('');
-          setAnswer('');
         }, 1500);
       } 
       else if (response.intent === 'SEARCH' && response.searchFilters) {
-        setAnswer('Applying filters...');
+        aiResponseText = 'Applying filters and searching...';
         const params = new URLSearchParams();
         Object.entries(response.searchFilters).forEach(([key, val]) => {
           if (val) params.set(key, val as string);
@@ -84,26 +108,35 @@ export default function VoiceAssistant() {
         setTimeout(() => {
           router.push(`/search?${params.toString()}`);
           setIsOpen(false);
-          setTranscript('');
-          setAnswer('');
         }, 1500);
       }
       else if (response.intent === 'QUESTION' && response.answerText) {
-        setAnswer(response.answerText);
+        aiResponseText = response.answerText;
         speakAnswer(response.answerText);
+      } else {
+        aiResponseText = "I processed your request, but I'm not sure what to do next.";
       }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: aiResponseText }]);
+
     } catch (error) {
-      setAnswer("Sorry, I couldn't understand that.");
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error." }]);
     } finally {
       setProcessing(false);
     }
   };
 
+  const handleTextSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputText.trim()) {
+      handleUserSubmit(inputText.trim());
+    }
+  };
+
   const speakAnswer = (text: string) => {
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // cancel any ongoing speech
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      // Attempt to pick an Indian voice for better pronunciation of Marathi/Hindi names
       const voices = window.speechSynthesis.getVoices();
       const indianVoice = voices.find(v => v.lang.includes('IN')) || voices[0];
       if (indianVoice) utterance.voice = indianVoice;
@@ -112,28 +145,21 @@ export default function VoiceAssistant() {
   };
 
   const toggleListening = () => {
-    if (!isOpen) {
-      setIsOpen(true);
-    }
-
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
-      if (isOpen) {
-        setAnswer('');
-      }
       setTranscript('');
       try {
         recognitionRef.current?.start();
-      } catch (e) {
-        // Recognition already started
-      }
+      } catch (e) {}
     }
   };
 
   if (!isSupported) {
     return null; 
   }
+
+  const showActiveMicrophone = isOpen && isListening;
 
   return (
     <>
@@ -143,94 +169,217 @@ export default function VoiceAssistant() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             style={{
               position: 'fixed',
               bottom: '90px',
               right: '20px',
-              width: '320px',
-              backgroundColor: 'white',
-              borderRadius: '20px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-              padding: '20px',
+              width: '360px',
+              height: '520px',
+              background: 'rgba(255, 255, 255, 0.75)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: '24px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.6)',
               zIndex: 9999,
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              border: '1px solid #f1f5f9'
+              overflow: 'hidden'
             }}
           >
-            <button 
-              onClick={() => setIsOpen(false)}
-              style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
-            >
-              &times;
-            </button>
-            
-            <h3 style={{ margin: '0 0 15px 0', color: '#0f172a', fontSize: '1.1rem', fontWeight: 600 }}>Aangan AI</h3>
-            
-            <div 
-              style={{ 
-                minHeight: '80px', 
-                width: '100%',
-                backgroundColor: '#f8fafc',
-                borderRadius: '12px',
-                padding: '12px',
-                marginBottom: '15px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                textAlign: 'center'
-              }}
-            >
-              {isListening && !transcript && (
-                <p style={{ color: '#94a3b8', margin: 0, fontStyle: 'italic' }}>Listening (English, Hindi, Marathi)...</p>
-              )}
-              {transcript && (
-                <p style={{ color: '#334155', margin: 0, fontWeight: 500 }}>"{transcript}"</p>
-              )}
-              {processing && (
-                <div style={{ marginTop: '10px', display: 'flex', gap: '4px' }}>
-                  <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6 }} style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-                  <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-                  <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-                </div>
-              )}
-              {answer && (
-                <p style={{ color: 'var(--primary)', margin: '10px 0 0 0', fontWeight: 600 }}>{answer}</p>
-              )}
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px 16px',
+              background: 'transparent',
+              borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', boxShadow: '0 0 8px var(--primary)' }} />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>Aangan AI</h3>
+              </div>
+              <button 
+                onClick={() => setIsOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#64748b', lineHeight: 1, padding: 0 }}
+              >
+                &times;
+              </button>
             </div>
             
-            <button
-              onClick={toggleListening}
-              style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                border: 'none',
-                backgroundColor: isListening ? '#fee2e2' : 'var(--primary)',
-                color: isListening ? '#ef4444' : 'white',
-                display: 'flex',
-                justifyContent: 'center',
+            {/* Chat Body */}
+            <div style={{
+              flex: 1,
+              padding: '20px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              background: 'transparent'
+            }}>
+              {messages.map((msg, i) => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  key={i} 
+                  style={{
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    background: msg.role === 'user' ? 'linear-gradient(135deg, var(--primary) 0%, #be123c 100%)' : 'rgba(255, 255, 255, 0.9)',
+                    color: msg.role === 'user' ? 'white' : '#334155',
+                    padding: '12px 16px',
+                    borderRadius: '18px',
+                    borderBottomRightRadius: msg.role === 'user' ? '4px' : '18px',
+                    borderBottomLeftRadius: msg.role === 'assistant' ? '4px' : '18px',
+                    maxWidth: '85%',
+                    boxShadow: msg.role === 'user' ? '0 4px 15px rgba(225, 29, 72, 0.3)' : '0 4px 15px rgba(0, 0, 0, 0.05)',
+                    border: msg.role === 'assistant' ? '1px solid rgba(255, 255, 255, 0.8)' : 'none',
+                    fontSize: '0.95rem',
+                    lineHeight: '1.5'
+                  }}
+                >
+                  {msg.content}
+                </motion.div>
+              ))}
+
+              {isListening && transcript && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    alignSelf: 'flex-end',
+                    background: 'linear-gradient(135deg, var(--primary) 0%, #be123c 100%)',
+                    color: 'white',
+                    padding: '12px 16px',
+                    borderRadius: '18px',
+                    borderBottomRightRadius: '4px',
+                    maxWidth: '85%',
+                    opacity: 0.7,
+                    fontSize: '0.95rem',
+                    lineHeight: '1.5'
+                  }}
+                >
+                  {transcript}
+                </motion.div>
+              )}
+
+              {processing && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    alignSelf: 'flex-start',
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    padding: '16px',
+                    borderRadius: '18px',
+                    borderBottomLeftRadius: '4px',
+                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.8)',
+                    display: 'flex',
+                    gap: '6px'
+                  }}
+                >
+                  <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6 }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />
+                  <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />
+                  <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />
+                </motion.div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+            
+            {/* Footer / Input Area */}
+            <div style={{
+              padding: '16px',
+              background: 'rgba(255, 255, 255, 0.5)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+            }}>
+              <form onSubmit={handleTextSubmit} style={{ 
+                display: 'flex', 
+                gap: '8px', 
                 alignItems: 'center',
-                cursor: 'pointer',
-                boxShadow: isListening ? 'none' : '0 4px 14px rgba(220, 38, 38, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                {isListening ? (
-                  <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
-                ) : (
-                  <>
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                  </>
-                )}
-              </svg>
-            </button>
+                background: 'rgba(255, 255, 255, 0.8)',
+                borderRadius: '24px',
+                padding: '6px',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.6)'
+              }}>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    padding: 0,
+                    borderRadius: '50%',
+                    border: 'none',
+                    backgroundColor: isListening ? '#ffe4e6' : 'transparent',
+                    color: isListening ? '#e11d48' : '#64748b',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke={isListening ? '#e11d48' : '#64748b'} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    {isListening ? (
+                      <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+                    ) : (
+                      <>
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                      </>
+                    )}
+                  </svg>
+                </button>
+
+                <input 
+                  type="text" 
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Ask Aangan AI..."
+                  disabled={processing}
+                  style={{
+                    flex: 1,
+                    padding: '8px 4px',
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '0.95rem',
+                    color: '#334155'
+                  }}
+                />
+
+                <button 
+                  type="submit"
+                  disabled={!inputText.trim() || processing}
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    padding: 0,
+                    borderRadius: '50%',
+                    border: 'none',
+                    backgroundColor: inputText.trim() && !processing ? 'var(--primary)' : 'transparent',
+                    color: inputText.trim() && !processing ? 'white' : '#94a3b8',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    cursor: inputText.trim() && !processing ? 'pointer' : 'default',
+                    flexShrink: 0,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke={inputText.trim() && !processing ? 'white' : '#94a3b8'} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'translateX(1px)' }}>
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -241,7 +390,7 @@ export default function VoiceAssistant() {
           animate={{ scale: 1 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={toggleListening}
+          onClick={() => setIsOpen(true)}
           style={{
             position: 'fixed',
             bottom: '30px',
@@ -250,21 +399,18 @@ export default function VoiceAssistant() {
             height: '64px',
             borderRadius: '50%',
             border: 'none',
-            backgroundColor: 'var(--primary)',
+            background: 'linear-gradient(135deg, var(--primary) 0%, #be123c 100%)',
             color: 'white',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             cursor: 'pointer',
-            boxShadow: '0 6px 20px rgba(220, 38, 38, 0.4)',
+            boxShadow: '0 8px 25px rgba(225, 29, 72, 0.4)',
             zIndex: 9998,
           }}
         >
-          <svg viewBox="0 0 24 24" width="30" height="30" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
+          <svg viewBox="0 0 24 24" width="30" height="30" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
         </motion.button>
       )}
