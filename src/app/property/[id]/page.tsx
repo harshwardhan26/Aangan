@@ -106,18 +106,44 @@ export default async function PropertyDetailsPage({ params }: { params: { id: st
                 <SavePropertyButton propertyId={property.id} />
               </div>
               <div className="key-specs">
-                <div className="spec-item">
-                  <span className="spec-label">Bedrooms</span>
-                  <span className="spec-value">{property.bedrooms} BHK</span>
-                </div>
-                <div className="spec-item">
-                  <span className="spec-label">Area</span>
-                  <span className="spec-value">{property.areaSqft} sqft</span>
-                </div>
-                <div className="spec-item">
-                  <span className="spec-label">Rate</span>
-                  <span className="spec-value">₹{Math.round(property.price / property.areaSqft).toLocaleString('en-IN')}/sqft</span>
-                </div>
+                {property.purpose === 'coliving' ? (
+                  <>
+                    <div className="spec-item">
+                      <span className="spec-label">Occupancy</span>
+                      <span className="spec-value">{property.occupancyType || 'Single'}</span>
+                    </div>
+                    <div className="spec-item">
+                      <span className="spec-label">Gender</span>
+                      <span className="spec-value">{property.genderPreference || 'Any'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="spec-item">
+                      <span className="spec-label">Bedrooms</span>
+                      <span className="spec-value">{property.bedrooms} BHK</span>
+                    </div>
+                    <div className="spec-item">
+                      <span className="spec-label">Area</span>
+                      <span className="spec-value">{property.areaSqft} sqft</span>
+                    </div>
+                  </>
+                )}
+                
+                {property.purpose !== 'coliving' && property.purpose !== 'rent' && property.areaSqft > 0 && (
+                  <div className="spec-item">
+                    <span className="spec-label">Rate</span>
+                    <span className="spec-value">₹{Math.round(property.price / property.areaSqft).toLocaleString('en-IN')}/sqft</span>
+                  </div>
+                )}
+
+                {property.purpose === 'rent' && property.deposit && (
+                  <div className="spec-item">
+                    <span className="spec-label">Deposit</span>
+                    <span className="spec-value">₹{property.deposit.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                
                 {property.propertyType && (
                   <div className="spec-item">
                     <span className="spec-label">Type</span>

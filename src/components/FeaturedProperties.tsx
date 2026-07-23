@@ -40,16 +40,38 @@ const cardVariants: Variants = {
 };
 
 export default function FeaturedProperties({ initialProperties }: { initialProperties: Property[] }) {
+  const [activeTab, setActiveTab] = useState<'all' | 'sell' | 'rent' | 'coliving'>('all');
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialProperties.length === 8);
   
+  const handleTabChange = async (tab: 'all' | 'sell' | 'rent' | 'coliving') => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    setLoading(true);
+    setProperties([]); // clear while loading, optional
+    try {
+      const filters = tab === 'all' ? { take: 8 } : { type: tab, take: 8 };
+      const newProperties = await getProperties(filters);
+      setProperties(newProperties);
+      setHasMore(newProperties.length === 8);
+    } catch (error) {
+      console.error("Failed to fetch properties for tab", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadMore = async () => {
     if (loading || !hasMore) return;
     setLoading(true);
     
     try {
-      const moreProperties = await getProperties({ skip: properties.length, take: 8 });
+      const filters: any = { skip: properties.length, take: 8 };
+      if (activeTab !== 'all') {
+        filters.type = activeTab;
+      }
+      const moreProperties = await getProperties(filters);
       if (moreProperties.length < 8) {
         setHasMore(false);
       }
@@ -66,6 +88,33 @@ export default function FeaturedProperties({ initialProperties }: { initialPrope
       <div className="section-header">
         <h3>Featured Properties</h3>
         <p>Handpicked exclusive properties for you</p>
+      </div>
+      
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+        {[
+          { id: 'all', label: 'All Properties' },
+          { id: 'sell', label: 'Buy' },
+          { id: 'rent', label: 'Rent' },
+          { id: 'coliving', label: 'Co-living' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id as any)}
+            style={{
+              padding: '10px 24px',
+              borderRadius: '999px',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 500,
+              fontSize: '0.95rem',
+              transition: 'var(--transition)',
+              backgroundColor: activeTab === tab.id ? 'var(--primary)' : 'var(--border)',
+              color: activeTab === tab.id ? 'white' : 'var(--text-main)',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
       
       <div className="property-grid">

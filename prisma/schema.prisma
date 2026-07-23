@@ -23,6 +23,9 @@ model Property {
   description  String?
   propertyType String?
   purpose      String?
+  deposit          Int?
+  occupancyType    String?
+  genderPreference String?
   sellerId     String?
   seller       User?    @relation(fields: [sellerId], references: [id])
   leads        Lead[]

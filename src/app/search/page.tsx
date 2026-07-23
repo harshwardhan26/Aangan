@@ -58,9 +58,23 @@ export default async function SearchPage({
   const maxPrice = resolvedParams.maxPrice ? parseInt(resolvedParams.maxPrice, 10) : undefined;
   const bhk = resolvedParams.bhk && resolvedParams.bhk !== 'all' ? parseInt(resolvedParams.bhk, 10) : undefined;
   const sort = resolvedParams.sort || 'newest';
+  const type = resolvedParams.type || 'sell';
 
   // Build Prisma filter clauses
   const where: any = {};
+
+  if (type === 'rent') {
+    where.purpose = 'rent';
+  } else if (type === 'coliving') {
+    where.purpose = 'coliving';
+  } else {
+    // Treat anything else (like 'sell' or no type) as a buy/sell property
+    // We allow null or 'sell' since older records might lack a purpose
+    where.OR = [
+      { purpose: 'sell' },
+      { purpose: null }
+    ];
+  }
 
   if (q) {
     where.OR = [
@@ -104,8 +118,16 @@ export default async function SearchPage({
         {/* Search Header Banner */}
         <div className="search-hero-header">
           <div className="search-hero-container">
-            <h1>Find Your Dream Property in Kolhapur</h1>
-            <p>Explore verified flats, luxury villas, and plots matching your exact budget</p>
+            <h1>
+              {type === 'rent' ? 'Find Properties for Rent in Kolhapur' : 
+               type === 'coliving' ? 'Find Co-living & PG Spaces in Kolhapur' : 
+               'Find Your Dream Property in Kolhapur'}
+            </h1>
+            <p>
+              {type === 'rent' ? 'Explore verified flats and independent houses for rent matching your budget' : 
+               type === 'coliving' ? 'Discover premium shared accommodations and student hostels' : 
+               'Explore verified flats, luxury villas, and plots matching your exact budget'}
+            </p>
           </div>
         </div>
 
@@ -161,10 +183,25 @@ export default async function SearchPage({
                           </p>
                         )}
                         <div className="features" style={{ marginBottom: '20px', paddingBottom: '15px' }}>
-                          <span>🛏️ {property.bedrooms} BHK</span>
-                          <span className="dot" style={{ margin: '0 8px' }}>·</span>
-                          <span>📐 {property.areaSqft} sqft</span>
+                          {property.purpose === 'coliving' ? (
+                            <>
+                              <span>👤 {property.occupancyType || 'Single'} Sharing</span>
+                              <span className="dot" style={{ margin: '0 8px' }}>·</span>
+                              <span>🧑‍🤝‍🧑 {property.genderPreference || 'Any'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🛏️ {property.bedrooms} BHK</span>
+                              <span className="dot" style={{ margin: '0 8px' }}>·</span>
+                              <span>📐 {property.areaSqft} sqft</span>
+                            </>
+                          )}
                         </div>
+                        {property.purpose === 'rent' && property.deposit && (
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '-10px', marginBottom: '15px' }}>
+                            Deposit: ₹{property.deposit.toLocaleString('en-IN')}
+                          </p>
+                        )}
                         <button className="btn-outline btn-block mt-3">Contact Seller</button>
                       </div>
                     </div>

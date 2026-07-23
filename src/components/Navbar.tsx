@@ -4,10 +4,14 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import LoginModal from './LoginModal';
 import { useSession, signOut, signIn } from 'next-auth/react';
+import { useSearchParams, usePathname } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function Navbar() {
+function NavbarContent() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const currentUser = session?.user as any;
 
   const handleLogout = () => {
@@ -30,10 +34,10 @@ export default function Navbar() {
           <img src="/assets/images/logo-black.png" alt="Aangan" className="logo-img" />
         </Link>
         <nav className="nav-links">
-          <Link href="/search" target="_blank" rel="noopener noreferrer" className="active">Buy</Link>
-          <Link href="/search?type=rent" target="_blank" rel="noopener noreferrer">Rent</Link>
-          <Link href="/search?type=sell" target="_blank" rel="noopener noreferrer">Sell</Link>
-          <Link href="/search?type=coliving" target="_blank" rel="noopener noreferrer">Co-living</Link>
+          <Link href="/search" className={!searchParams.get('type') && pathname !== '/sell' ? 'active' : ''}>Buy</Link>
+          <Link href="/search?type=rent" className={searchParams.get('type') === 'rent' ? 'active' : ''}>Rent</Link>
+          <Link href="/sell" className={pathname === '/sell' ? 'active' : ''}>Sell</Link>
+          <Link href="/search?type=coliving" className={searchParams.get('type') === 'coliving' ? 'active' : ''}>Co-living</Link>
         </nav>
         <div className="nav-actions">
           <Link href="/list-property" className="btn-nav-sell">
@@ -116,5 +120,13 @@ export default function Navbar() {
         onClose={() => setIsLoginOpen(false)} 
       />
     </>
+  );
+}
+
+export default function Navbar() {
+  return (
+    <Suspense fallback={<header className="navbar"><div className="logo">Loading...</div></header>}>
+      <NavbarContent />
+    </Suspense>
   );
 }

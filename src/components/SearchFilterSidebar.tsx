@@ -32,9 +32,13 @@ export default function SearchFilterSidebar() {
   // Read current URL params
   const currentQuery = searchParams.get('q') || '';
   const currentLocality = searchParams.get('locality') || 'All Localities';
-  const currentMaxPrice = searchParams.get('maxPrice') || '30000000';
   const currentBhk = searchParams.get('bhk') || 'all';
   const currentSort = searchParams.get('sort') || 'newest';
+  const type = searchParams.get('type') || 'sell';
+  
+  const isRentOrColiving = type === 'rent' || type === 'coliving';
+  const defaultMaxPrice = isRentOrColiving ? '100000' : '30000000';
+  const currentMaxPrice = searchParams.get('maxPrice') || defaultMaxPrice;
 
   const [q, setQ] = useState(currentQuery);
   const [locality, setLocality] = useState(currentLocality);
@@ -42,11 +46,13 @@ export default function SearchFilterSidebar() {
   const [bhk, setBhk] = useState(currentBhk);
   const [sort, setSort] = useState(currentSort);
 
-  // Sync state with URL params on navigation
   useEffect(() => {
+    const newType = searchParams.get('type') || 'sell';
+    const isRentOrColiving = newType === 'rent' || newType === 'coliving';
+    
     setQ(searchParams.get('q') || '');
     setLocality(searchParams.get('locality') || 'All Localities');
-    setMaxPrice(searchParams.get('maxPrice') || '30000000');
+    setMaxPrice(searchParams.get('maxPrice') || (isRentOrColiving ? '100000' : '30000000'));
     setBhk(searchParams.get('bhk') || 'all');
     setSort(searchParams.get('sort') || 'newest');
   }, [searchParams]);
@@ -77,9 +83,9 @@ export default function SearchFilterSidebar() {
 
   const formatRs = (numStr: string) => {
     const num = parseInt(numStr, 10);
-    if (isNaN(num)) return '₹3 Cr';
+    if (isNaN(num)) return isRentOrColiving ? '₹1 L / mo' : '₹3 Cr';
     if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)} Cr`;
-    if (num >= 100000) return `₹${(num / 100000).toFixed(0)} L`;
+    if (num >= 100000) return `₹${(num / 100000).toFixed(1).replace(/\.0$/, '')} L`;
     return `₹${num.toLocaleString('en-IN')}`;
   };
 
@@ -129,14 +135,14 @@ export default function SearchFilterSidebar() {
         {/* Max Budget Filter */}
         <div className="filter-group">
           <div className="label-with-value">
-            <label>Max Budget</label>
+            <label>Max Budget {isRentOrColiving ? '(per month)' : ''}</label>
             <span className="budget-val-badge">{formatRs(maxPrice)}</span>
           </div>
           <input 
             type="range" 
-            min="500000" 
-            max="30000000" 
-            step="500000" 
+            min={isRentOrColiving ? "1000" : "500000"} 
+            max={isRentOrColiving ? "100000" : "30000000"} 
+            step={isRentOrColiving ? "1000" : "500000"} 
             value={maxPrice} 
             onChange={(e) => setMaxPrice(e.target.value)}
             onMouseUp={(e) => updateFilters({ maxPrice: e.currentTarget.value })}
@@ -144,29 +150,31 @@ export default function SearchFilterSidebar() {
             className="filter-range-slider"
           />
           <div className="range-bounds">
-            <span>₹5 L</span>
-            <span>₹3 Cr</span>
+            <span>{isRentOrColiving ? '₹1K' : '₹5 L'}</span>
+            <span>{isRentOrColiving ? '₹1 L' : '₹3 Cr'}</span>
           </div>
         </div>
 
-        {/* Bedrooms / BHK Filter */}
-        <div className="filter-group">
-          <label>Bedrooms (BHK)</label>
-          <div className="bhk-pills">
-            {['all', '1', '2', '3', '4'].map((val) => (
-              <button 
-                key={val} 
-                className={`bhk-pill ${bhk === val ? 'active' : ''}`}
-                onClick={() => {
-                  setBhk(val);
-                  updateFilters({ bhk: val });
-                }}
-              >
-                {val === 'all' ? 'All' : val === '4' ? '4+ BHK' : `${val} BHK`}
-              </button>
-            ))}
+        {/* Bedrooms / BHK Filter (Hide for Coliving) */}
+        {type !== 'coliving' && (
+          <div className="filter-group">
+            <label>Bedrooms (BHK)</label>
+            <div className="bhk-pills">
+              {['all', '1', '2', '3', '4'].map((val) => (
+                <button 
+                  key={val} 
+                  className={`bhk-pill ${bhk === val ? 'active' : ''}`}
+                  onClick={() => {
+                    setBhk(val);
+                    updateFilters({ bhk: val });
+                  }}
+                >
+                  {val === 'all' ? 'All' : val === '4' ? '4+ BHK' : `${val} BHK`}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Sort Filter */}
         <div className="filter-group">
