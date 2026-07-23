@@ -1,9 +1,19 @@
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Trigger Next.js hard restart to pick up new Prisma Client
-  // Trigger a hard reboot to clear Turbopack cache
 };
 
-export default nextConfig;
+export default withSentryConfig(
+  nextConfig,
+  {
+    // For all available options, see:
+    // https://github.com/getsentry/sentry-webpack-plugin#options
+
+    // Suppresses source map uploading logs during build
+    silent: true,
+    org: "your-sentry-org",
+    project: "your-sentry-project",
+  }
+);

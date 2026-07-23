@@ -45,6 +45,8 @@ export async function generateMetadata({
   };
 }
 
+import PostHogEventTracker from '@/components/PostHogEventTracker';
+
 export default async function PropertyDetailsPage({ params }: { params: { id: string } }) {
   // Await params to be safe with Next.js 15 breaking changes
   const resolvedParams = await params;
@@ -62,6 +64,14 @@ export default async function PropertyDetailsPage({ params }: { params: { id: st
   return (
     <>
       <Navbar />
+      <PostHogEventTracker 
+        eventName="property_viewed" 
+        properties={{ 
+          property_id: property.id, 
+          purpose: property.purpose || 'sell', 
+          locality: property.location 
+        }} 
+      />
       
       <main className="property-details-page">
         {/* Hero Section */}

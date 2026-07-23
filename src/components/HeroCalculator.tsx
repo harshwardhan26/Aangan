@@ -1,8 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Suspense } from 'react';
+import LocalityAutocomplete from './LocalityAutocomplete';
+import SearchFilterSidebar from './SearchFilterSidebar';
+
+function FilterBadgeComponent() {
+  const searchParams = useSearchParams();
+  const activeFiltersCount = Array.from(searchParams.keys()).filter(key => key !== 'sort' && key !== 'type' && key !== 'q').length;
+  return <span>Filters {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}</span>;
+}
+
+function FilterBadge() {
+  return (
+    <Suspense fallback={<span>Filters</span>}>
+      <FilterBadgeComponent />
+    </Suspense>
+  );
+}
 
 export default function HeroCalculator() {
   const router = useRouter();
@@ -12,6 +29,7 @@ export default function HeroCalculator() {
   const [calcCustomRate, setCalcCustomRate] = useState('');
   const [calcBudget, setCalcBudget] = useState('5000000');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterModalOpen, setFilterModalOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -266,23 +284,22 @@ export default function HeroCalculator() {
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
               </div>
-              <input
-                type="text"
-                className="locality-input-unified"
-                placeholder="Search by locality, e.g. Tarabai Park, Rajarampuri..."
+              <LocalityAutocomplete
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchQuery.trim()) {
-                    router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                onChange={setSearchQuery}
+                onSubmit={(val) => {
+                  if (val.trim()) {
+                    router.push(`/search?locality=${encodeURIComponent(val.trim())}`);
                   }
                 }}
+                placeholder="Search by locality, e.g. Tarabai Park, Rajarampuri..."
+                inputClassName="locality-input-unified w-100"
               />
               <button
                 className="btn-primary search-btn-inner"
                 onClick={() => {
                   if (searchQuery.trim()) {
-                    router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                    router.push(`/search?locality=${encodeURIComponent(searchQuery.trim())}`);
                   } else {
                     router.push('/search');
                   }
@@ -292,7 +309,10 @@ export default function HeroCalculator() {
               </button>
             </div>
 
-            <button className="filters-btn-glass" onClick={() => router.push('/search')}>
+            <button 
+              className="filters-btn-glass" 
+              onClick={() => setFilterModalOpen(true)}
+            >
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="4" y1="21" x2="4" y2="14"></line>
                 <line x1="4" y1="10" x2="4" y2="3"></line>
@@ -304,11 +324,32 @@ export default function HeroCalculator() {
                 <line x1="9" y1="8" x2="15" y2="8"></line>
                 <line x1="17" y1="16" x2="23" y2="16"></line>
               </svg>
-              <span>Filters</span>
+              <FilterBadge />
             </button>
           </div>
         </motion.div>
       </div>
+
+      {isFilterModalOpen && (
+        <div 
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', zIndex: 9999,
+            display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px'
+          }}
+          onClick={() => setFilterModalOpen(false)}
+        >
+          <div 
+            style={{
+              background: 'var(--light)', borderRadius: '12px', width: '100%', maxWidth: '350px',
+              maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <SearchFilterSidebar isModal={true} onClose={() => setFilterModalOpen(false)} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

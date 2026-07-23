@@ -1,10 +1,12 @@
+import PostHogEventTracker from "@/components/PostHogEventTracker";
+
 import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SearchFilterSidebar from '@/components/SearchFilterSidebar';
-import prisma from '@/lib/prisma';
+import { getProperties, SearchFilters } from '@/actions/properties';
 
 const AMENITY_SYMBOLS: Record<string, string> = {
   'Parking': '🚗',
@@ -53,66 +55,43 @@ export default async function SearchPage({
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
   const resolvedParams = await searchParams;
-  const q = resolvedParams.q || '';
+  
+  const filters: SearchFilters = {
+    q: resolvedParams.q,
+    locality: resolvedParams.locality,
+    type: resolvedParams.type,
+    bhk: resolvedParams.bhk,
+    maxPrice: resolvedParams.maxPrice,
+    minArea: resolvedParams.minArea,
+    maxArea: resolvedParams.maxArea,
+    propertyType: resolvedParams.propertyType,
+    amenities: resolvedParams.amenities,
+    occupancyType: resolvedParams.occupancyType,
+    genderPreference: resolvedParams.genderPreference,
+    sort: resolvedParams.sort,
+  };
+
+  const properties = await getProperties(filters);
+
   const locality = resolvedParams.locality;
-  const maxPrice = resolvedParams.maxPrice ? parseInt(resolvedParams.maxPrice, 10) : undefined;
-  const bhk = resolvedParams.bhk && resolvedParams.bhk !== 'all' ? parseInt(resolvedParams.bhk, 10) : undefined;
-  const sort = resolvedParams.sort || 'newest';
-  const type = resolvedParams.type || 'sell';
-
-  // Build Prisma filter clauses
-  const where: any = {};
-
-  if (type === 'rent') {
-    where.purpose = 'rent';
-  } else if (type === 'coliving') {
-    where.purpose = 'coliving';
-  } else {
-    // Treat anything else (like 'sell' or no type) as a buy/sell property
-    // We allow null or 'sell' since older records might lack a purpose
-    where.OR = [
-      { purpose: 'sell' },
-      { purpose: null }
-    ];
-  }
-
-  if (q) {
-    where.OR = [
-      { title: { contains: q, mode: 'insensitive' } },
-      { location: { contains: q, mode: 'insensitive' } },
-      { description: { contains: q, mode: 'insensitive' } }
-    ];
-  }
-
-  if (locality && locality !== 'All Localities') {
-    where.location = { contains: locality, mode: 'insensitive' };
-  }
-
-  if (maxPrice) {
-    where.price = { lte: maxPrice };
-  }
-
-  if (bhk) {
-    if (bhk >= 4) {
-      where.bedrooms = { gte: 4 };
-    } else {
-      where.bedrooms = bhk;
-    }
-  }
-
-  // Determine sort order
-  let orderBy: any = { createdAt: 'desc' };
-  if (sort === 'price_asc') orderBy = { price: 'asc' };
-  if (sort === 'price_desc') orderBy = { price: 'desc' };
-
-  const properties = await prisma.property.findMany({
-    where,
-    orderBy,
-  });
+  const maxPrice = resolvedParams.maxPrice;
+  const bhk = resolvedParams.bhk;
+  const type = resolvedParams.type || 'all';
+  const q = resolvedParams.q;
 
   return (
     <>
       <Navbar />
+      <PostHogEventTracker 
+        eventName="search_performed" 
+        properties={{ 
+          locality: locality || 'All Localities', 
+          budget: maxPrice, 
+          bedrooms: bhk, 
+          purpose: type,
+          query: q
+        }} 
+      />
       
       <main className="search-page">
         {/* Search Header Banner */}

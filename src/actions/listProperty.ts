@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import PostHogClient from '@/lib/posthog-server';
 
 import { z } from 'zod';
 
@@ -82,6 +83,23 @@ export async function createPropertyAction(data: CreatePropertyInput) {
     revalidatePath('/');
     revalidatePath('/search');
 
+    try {
+      const phClient = PostHogClient();
+      phClient.capture({
+        distinctId: validData.sellerId || 'anonymous_seller',
+        event: 'list_property_completed',
+        properties: {
+          property_id: newProperty.id,
+          purpose: newProperty.purpose,
+          property_type: newProperty.propertyType,
+          price: newProperty.price,
+        },
+      });
+      await phClient.shutdown();
+    } catch (phError) {
+      console.error('PostHog error:', phError);
+    }
+
     return {
       success: true,
       property: newProperty,
@@ -89,6 +107,12 @@ export async function createPropertyAction(data: CreatePropertyInput) {
     };
   } catch (error: any) {
     console.error('Error creating property:', error);
+    
+    const Sentry = require('@sentry/nextjs');
+    Sentry.captureException(error, {
+      tags: { action: 'createPropertyAction' },
+      user: data.sellerId ? { id: data.sellerId } : undefined,
+    });
     
     // P2003 is Prisma's Foreign Key Constraint Violation code
     if (error.code === 'P2003') {

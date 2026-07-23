@@ -126,8 +126,9 @@ export default function FeaturedProperties({ initialProperties }: { initialPrope
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
             custom={idx}
+            style={{ height: '100%' }}
           >
-            <Link href={`/property/${property.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Link href={`/property/${property.id}`} style={{ textDecoration: 'none', color: 'inherit', height: '100%', display: 'block' }}>
               <div className="property-card">
                 <div className="card-img-wrapper">
                   <img src={property.imageUrl} alt={property.title} />

@@ -2,39 +2,36 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import LocalityAutocomplete from './LocalityAutocomplete';
 
-const localities = [
-  'All Localities',
-  'Tarabai Park',
-  'Nagala Park',
-  'Rajarampuri',
-  'Shahupuri',
-  'Pratibha Nagar',
-  'Ruikar Colony',
-  'Shalini Palace',
-  'Padmaraje Park',
-  'Subhash Nagar',
-  'Hari Om Nagar',
-  'Phulewadi',
-  'Kadamwadi',
-  'Bapat Camp',
-  'Mangalwar Peth',
-  'Kasba Bawada',
-  'Kalamba',
-  'Kagal Road / MIDC'
+const AMENITIES_LIST = [
+  'Parking',
+  'Gymnasium',
+  'Swimming Pool',
+  'Security',
+  'Power Backup',
+  'Elevator',
+  'Balcony',
+  'Club House'
 ];
 
-export default function SearchFilterSidebar() {
+export default function SearchFilterSidebar({ isModal, onClose }: { isModal?: boolean; onClose?: () => void }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
   // Read current URL params
   const currentQuery = searchParams.get('q') || '';
-  const currentLocality = searchParams.get('locality') || 'All Localities';
+  const currentLocality = searchParams.get('locality') || '';
   const currentBhk = searchParams.get('bhk') || 'all';
   const currentSort = searchParams.get('sort') || 'newest';
   const type = searchParams.get('type') || 'sell';
+  const currentPropertyType = searchParams.get('propertyType') || 'all';
+  const currentMinArea = searchParams.get('minArea') || '';
+  const currentMaxArea = searchParams.get('maxArea') || '';
+  const currentAmenities = searchParams.get('amenities') ? searchParams.get('amenities')!.split(',') : [];
+  const currentOccupancyType = searchParams.get('occupancyType') || 'Any';
+  const currentGenderPref = searchParams.get('genderPreference') || 'Any';
   
   const isRentOrColiving = type === 'rent' || type === 'coliving';
   const defaultMaxPrice = isRentOrColiving ? '100000' : '30000000';
@@ -45,27 +42,40 @@ export default function SearchFilterSidebar() {
   const [maxPrice, setMaxPrice] = useState(currentMaxPrice);
   const [bhk, setBhk] = useState(currentBhk);
   const [sort, setSort] = useState(currentSort);
+  const [propertyType, setPropertyType] = useState(currentPropertyType);
+  const [minArea, setMinArea] = useState(currentMinArea);
+  const [maxArea, setMaxArea] = useState(currentMaxArea);
+  const [amenities, setAmenities] = useState<string[]>(currentAmenities);
+  const [occupancyType, setOccupancyType] = useState(currentOccupancyType);
+  const [genderPreference, setGenderPreference] = useState(currentGenderPref);
 
   useEffect(() => {
     const newType = searchParams.get('type') || 'sell';
     const isRentOrColiving = newType === 'rent' || newType === 'coliving';
     
     setQ(searchParams.get('q') || '');
-    setLocality(searchParams.get('locality') || 'All Localities');
+    setLocality(searchParams.get('locality') || '');
     setMaxPrice(searchParams.get('maxPrice') || (isRentOrColiving ? '100000' : '30000000'));
     setBhk(searchParams.get('bhk') || 'all');
     setSort(searchParams.get('sort') || 'newest');
+    setPropertyType(searchParams.get('propertyType') || 'all');
+    setMinArea(searchParams.get('minArea') || '');
+    setMaxArea(searchParams.get('maxArea') || '');
+    setAmenities(searchParams.get('amenities') ? searchParams.get('amenities')!.split(',') : []);
+    setOccupancyType(searchParams.get('occupancyType') || 'Any');
+    setGenderPreference(searchParams.get('genderPreference') || 'Any');
   }, [searchParams]);
 
-  // Helper to push updated search params to URL
-  const updateFilters = (newFilters: { [key: string]: string }) => {
+  const updateFilters = (newFilters: { [key: string]: string | string[] }) => {
+    if (isModal) return;
+
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(newFilters).forEach(([key, val]) => {
-      if (!val || val === 'all' || val === 'All Localities' || (key === 'maxPrice' && val === '30000000') || (key === 'sort' && val === 'newest')) {
+      if (!val || val === 'all' || val === 'All Localities' || val === 'Any' || (Array.isArray(val) && val.length === 0) || (key === 'maxPrice' && val === '30000000') || (key === 'sort' && val === 'newest')) {
         params.delete(key);
       } else {
-        params.set(key, val);
+        params.set(key, Array.isArray(val) ? val.join(',') : val);
       }
     });
 
@@ -74,10 +84,16 @@ export default function SearchFilterSidebar() {
 
   const handleClear = () => {
     setQ('');
-    setLocality('All Localities');
+    setLocality('');
     setMaxPrice('30000000');
     setBhk('all');
     setSort('newest');
+    setPropertyType('all');
+    setMinArea('');
+    setMaxArea('');
+    setAmenities([]);
+    setOccupancyType('Any');
+    setGenderPreference('Any');
     router.push(pathname);
   };
 
@@ -89,12 +105,25 @@ export default function SearchFilterSidebar() {
     return `₹${num.toLocaleString('en-IN')}`;
   };
 
+  const toggleAmenity = (amenity: string) => {
+    const newAmenities = amenities.includes(amenity)
+      ? amenities.filter(a => a !== amenity)
+      : [...amenities, amenity];
+    setAmenities(newAmenities);
+    updateFilters({ amenities: newAmenities });
+  };
+
   return (
     <aside className="search-filter-sidebar">
       <div className="filter-card">
         <div className="filter-card-header">
           <h3>Filter Properties</h3>
-          <button className="btn-text-clear" onClick={handleClear}>Clear All</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className="btn-text-clear" onClick={handleClear}>Reset All</button>
+            {isModal && onClose && (
+              <button className="btn-text-clear" onClick={onClose} style={{ fontSize: '1.2rem', padding: '0 5px' }}>&times;</button>
+            )}
+          </div>
         </div>
 
         {/* Text Query Filter */}
@@ -119,16 +148,31 @@ export default function SearchFilterSidebar() {
         {/* Locality Filter */}
         <div className="filter-group">
           <label>Locality in Kolhapur</label>
+          <LocalityAutocomplete
+            value={locality}
+            onChange={(val) => setLocality(val)}
+            onSelect={(val) => updateFilters({ locality: val })}
+            placeholder="Search locality..."
+            inputClassName="filter-input-unified"
+          />
+        </div>
+
+        {/* Property Type Filter */}
+        <div className="filter-group">
+          <label>Property Type</label>
           <select 
-            value={locality} 
+            value={propertyType} 
             onChange={(e) => {
-              setLocality(e.target.value);
-              updateFilters({ locality: e.target.value });
+              setPropertyType(e.target.value);
+              updateFilters({ propertyType: e.target.value });
             }}
           >
-            {localities.map((loc, i) => (
-              <option key={i} value={loc}>{loc}</option>
-            ))}
+            <option value="all">All Types</option>
+            <option value="Apartment/Flat">Apartment/Flat</option>
+            <option value="Villa">Villa</option>
+            <option value="Plot">Plot</option>
+            <option value="Row House">Row House</option>
+            <option value="PG">PG</option>
           </select>
         </div>
 
@@ -176,6 +220,88 @@ export default function SearchFilterSidebar() {
           </div>
         )}
 
+        {/* Area / Size Filter */}
+        <div className="filter-group">
+          <label>Area (sq ft)</label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="number" 
+              placeholder="Min" 
+              value={minArea}
+              onChange={(e) => setMinArea(e.target.value)}
+              onBlur={() => updateFilters({ minArea })}
+              onKeyDown={(e) => e.key === 'Enter' && updateFilters({ minArea })}
+              className="filter-input-unified"
+              style={{ flex: 1 }}
+            />
+            <input 
+              type="number" 
+              placeholder="Max" 
+              value={maxArea}
+              onChange={(e) => setMaxArea(e.target.value)}
+              onBlur={() => updateFilters({ maxArea })}
+              onKeyDown={(e) => e.key === 'Enter' && updateFilters({ maxArea })}
+              className="filter-input-unified"
+              style={{ flex: 1 }}
+            />
+          </div>
+        </div>
+
+        {/* Co-living Specific Filters */}
+        {type === 'coliving' && (
+          <>
+            <div className="filter-group">
+              <label>Occupancy Type</label>
+              <select 
+                value={occupancyType} 
+                onChange={(e) => {
+                  setOccupancyType(e.target.value);
+                  updateFilters({ occupancyType: e.target.value });
+                }}
+              >
+                <option value="Any">Any</option>
+                <option value="Single">Single</option>
+                <option value="Double">Double</option>
+                <option value="Triple">Triple</option>
+                <option value="Shared">Shared</option>
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <label>Gender Preference</label>
+              <select 
+                value={genderPreference} 
+                onChange={(e) => {
+                  setGenderPreference(e.target.value);
+                  updateFilters({ genderPreference: e.target.value });
+                }}
+              >
+                <option value="Any">Any</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+          </>
+        )}
+
+        {/* Amenities Filter */}
+        <div className="filter-group">
+          <label>Amenities</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+            {AMENITIES_LIST.map((amenity) => (
+              <label key={amenity} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.95rem', color: '#334155' }}>
+                <input
+                  type="checkbox"
+                  checked={amenities.includes(amenity)}
+                  onChange={() => toggleAmenity(amenity)}
+                  style={{ accentColor: 'var(--primary)', width: '18px', height: '18px' }}
+                />
+                {amenity}
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Sort Filter */}
         <div className="filter-group">
           <label>Sort Results By</label>
@@ -192,6 +318,34 @@ export default function SearchFilterSidebar() {
           </select>
         </div>
       </div>
+      
+      {isModal && (
+        <div style={{ padding: '20px', borderTop: '1px solid var(--border)', background: 'white', position: 'sticky', bottom: 0, zIndex: 10 }}>
+          <button 
+            className="btn-primary" 
+            style={{ width: '100%', padding: '12px' }}
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (q) params.set('q', q); else params.delete('q');
+              if (locality && locality !== 'All Localities') params.set('locality', locality); else params.delete('locality');
+              if (maxPrice && maxPrice !== '30000000' && maxPrice !== '100000') params.set('maxPrice', maxPrice); else params.delete('maxPrice');
+              if (bhk && bhk !== 'all') params.set('bhk', bhk); else params.delete('bhk');
+              if (sort && sort !== 'newest') params.set('sort', sort); else params.delete('sort');
+              if (propertyType && propertyType !== 'all') params.set('propertyType', propertyType); else params.delete('propertyType');
+              if (minArea) params.set('minArea', minArea); else params.delete('minArea');
+              if (maxArea) params.set('maxArea', maxArea); else params.delete('maxArea');
+              if (amenities.length > 0) params.set('amenities', amenities.join(',')); else params.delete('amenities');
+              if (occupancyType && occupancyType !== 'Any') params.set('occupancyType', occupancyType); else params.delete('occupancyType');
+              if (genderPreference && genderPreference !== 'Any') params.set('genderPreference', genderPreference);
+              
+              router.push(`/search?${params.toString()}`);
+              if (onClose) onClose();
+            }}
+          >
+            Apply Filters
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

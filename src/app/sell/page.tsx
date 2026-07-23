@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import PostHogClickTracker from '@/components/PostHogClickTracker';
 
 export const metadata: Metadata = {
   title: 'Sell Your Property | Aangan Kolhapur',
@@ -23,9 +24,11 @@ export default function SellPage() {
               Reach thousands of genuine buyers and tenants in Kolhapur without paying hefty brokerage fees. 
               Take control of your listings and close deals directly.
             </p>
-            <Link href="/list-property" className="btn-primary" style={{ padding: '15px 40px', fontSize: '1.2rem', display: 'inline-block' }}>
-              Post Property for Free
-            </Link>
+            <PostHogClickTracker eventName="sell_page_cta_clicked">
+              <Link href="/list-property" className="btn-primary" style={{ padding: '15px 40px', fontSize: '1.2rem', display: 'inline-block' }}>
+                Post Property for Free
+              </Link>
+            </PostHogClickTracker>
           </div>
         </section>
 

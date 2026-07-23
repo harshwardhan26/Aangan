@@ -55,6 +55,12 @@ const AMENITY_SYMBOLS: Record<string, string> = {
 export default function ListPropertyPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
+  useEffect(() => {
+    import('posthog-js').then((ph) => {
+      ph.default.capture('list_property_started');
+    });
+  }, []);
+
   // Form State
   const [title, setTitle] = useState('');
   const [propertyType, setPropertyType] = useState('Apartment / Flat');

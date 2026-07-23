@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import PostHogClient from '@/lib/posthog-server';
 
 import { z } from 'zod';
 
@@ -75,12 +76,32 @@ export async function submitLeadAction(data: {
       },
     });
 
+    try {
+      const phClient = PostHogClient();
+      phClient.capture({
+        distinctId: phone || buyerId || 'anonymous_lead',
+        event: 'lead_submitted',
+        properties: {
+          property_id: propertyId,
+          source: source || 'contact',
+        },
+      });
+      await phClient.shutdown(); // ensure it flushes
+    } catch (phError) {
+      console.error('PostHog error:', phError);
+    }
+
     return {
       success: true,
       lead,
     };
   } catch (error: any) {
     console.error('Error submitting lead:', error);
+    const Sentry = require('@sentry/nextjs');
+    Sentry.captureException(error, {
+      tags: { action: 'submitLeadAction' },
+      user: data.buyerId ? { id: data.buyerId } : undefined,
+    });
     return {
       success: false,
       error: 'Failed to submit lead.',

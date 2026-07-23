@@ -25,6 +25,11 @@ export default function SavePropertyButton({ propertyId, initialIsSaved = false 
     const res = await toggleSavedPropertyAction(user.id, propertyId);
     if (!res.success) {
       setIsSaved(previousState); // Rollback on failure
+    } else if (!previousState) {
+      // If it was successfully saved (not unsaved)
+      import('posthog-js').then((ph) => {
+        ph.default.capture('property_saved', { property_id: propertyId });
+      });
     }
   };
 
