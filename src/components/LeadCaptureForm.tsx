@@ -1,34 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { submitLeadAction } from '@/actions/leads';
+import { useSession } from 'next-auth/react';
+import LoginModal from './LoginModal';
 
 export default function LeadCaptureForm({ propertyId, sellerId }: { propertyId: string, sellerId: string }) {
+  const { data: session, status } = useSession();
+  const user = session?.user as any;
+  
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  React.useEffect(() => {
-    const saved = localStorage.getItem('aangan_user');
-    if (saved) {
-      setUser(JSON.parse(saved));
+  // Auto-fill if user is logged in
+  useEffect(() => {
+    if (user) {
+      if (user.name) setName(user.name);
+      if (user.email) setEmail(user.email);
+      if (user.phone) setPhone(user.phone);
     }
-  }, []);
+  }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitLead = async (buyerId?: string) => {
     setLoading(true);
-
     const res = await submitLeadAction({
       name,
       phone,
       email,
       propertyId,
       sellerId,
-      buyerId: user?.id,
+      buyerId: buyerId || user?.id,
     });
 
     setLoading(false);
@@ -37,6 +42,17 @@ export default function LeadCaptureForm({ propertyId, sellerId }: { propertyId: 
     } else {
       alert(res.error || 'Failed to submit request.');
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (status === 'unauthenticated' || !user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    await submitLead();
   };
 
   if (isSuccess) {
@@ -121,6 +137,14 @@ export default function LeadCaptureForm({ propertyId, sellerId }: { propertyId: 
           )}
         </button>
       </form>
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={(loggedInUser) => {
+          setShowLoginModal(false);
+          submitLead(loggedInUser.id);
+        }}
+      />
     </div>
   );
 }

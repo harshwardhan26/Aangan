@@ -16,6 +16,7 @@ type Property = {
   imageUrl: string;
   badge: string | null;
   amenities: string | null;
+  description: string | null;
 };
 
 const AMENITY_SYMBOLS: Record<string, string> = {
@@ -87,6 +88,19 @@ export default function FeaturedProperties({ initialProperties }: { initialPrope
                   <div className="price">{property.displayPrice}</div>
                   <h4>{property.title}</h4>
                   <p className="location">{property.location}</p>
+                  {property.description && (
+                    <p style={{ 
+                      fontSize: '0.85rem', 
+                      color: 'var(--text-secondary)', 
+                      margin: '10px 0',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {property.description}
+                    </p>
+                  )}
                   <div className="features" style={{ marginBottom: '20px', paddingBottom: '15px' }}>
                     <span>🛏️ {property.bedrooms} BHK</span>
                     <span className="dot">·</span>

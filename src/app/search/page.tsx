@@ -64,13 +64,14 @@ export default async function SearchPage({
 
   if (q) {
     where.OR = [
-      { title: { contains: q } },
-      { location: { contains: q } }
+      { title: { contains: q, mode: 'insensitive' } },
+      { location: { contains: q, mode: 'insensitive' } },
+      { description: { contains: q, mode: 'insensitive' } }
     ];
   }
 
   if (locality && locality !== 'All Localities') {
-    where.location = { contains: locality };
+    where.location = { contains: locality, mode: 'insensitive' };
   }
 
   if (maxPrice) {
@@ -146,6 +147,19 @@ export default async function SearchPage({
                         <div className="price">{property.displayPrice}</div>
                         <h3>{property.title}</h3>
                         <p className="location">{property.location}</p>
+                        {property.description && (
+                          <p style={{ 
+                            fontSize: '0.85rem', 
+                            color: 'var(--text-secondary)', 
+                            margin: '10px 0',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {property.description}
+                          </p>
+                        )}
                         <div className="features" style={{ marginBottom: '20px', paddingBottom: '15px' }}>
                           <span>🛏️ {property.bedrooms} BHK</span>
                           <span className="dot" style={{ margin: '0 8px' }}>·</span>

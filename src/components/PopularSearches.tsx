@@ -37,6 +37,9 @@ export default function PopularSearches() {
             </Link>
           ))}
         </div>
+        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <Link href="/search" className="btn-outline" style={{ display: 'inline-block', padding: '10px 24px' }}>View all categories</Link>
+        </div>
       </div>
 
       <div className="rea-group-footer">

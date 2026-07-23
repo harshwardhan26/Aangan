@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 type Article = {
   id: string;
@@ -48,7 +49,7 @@ export default function NewsArticles() {
           <h3>News and Articles</h3>
           <p>Read what's happening in Kolhapur Real Estate</p>
         </div>
-        <button className="btn-outline btn-sm">See all news & articles →</button>
+        <Link href="/search" className="btn-outline btn-sm">See all news & articles →</Link>
       </div>
 
       <div className="news-grid">

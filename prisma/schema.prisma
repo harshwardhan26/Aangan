@@ -20,6 +20,7 @@ model Property {
   imageUrl     String
   badge        String?
   amenities    String?
+  description  String?
   propertyType String?
   purpose      String?
   sellerId     String?
@@ -29,6 +30,11 @@ model Property {
   images       PropertyImage[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([location])
+  @@index([price])
+  @@index([bedrooms])
+  @@index([propertyType])
 }
 
 model User {

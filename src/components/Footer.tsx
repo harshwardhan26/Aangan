@@ -13,20 +13,20 @@ export default function Footer() {
         </div>
         <div className="footer-col">
           <h4>Company</h4>
-          <a href="#">About Us</a>
-          <a href="#">Careers</a>
-          <a href="#">Contact Us</a>
+          <Link href="/about">About Us</Link>
+          <Link href="/careers">Careers</Link>
+          <Link href="/contact">Contact Us</Link>
         </div>
         <div className="footer-col">
           <h4>Services</h4>
-          <a href="#">Buy Property</a>
-          <a href="#">Rent Property</a>
-          <a href="#">Home Loans</a>
+          <Link href="/search">Buy Property</Link>
+          <Link href="/search?type=rent">Rent Property</Link>
+          <Link href="/search?type=coliving">Co-living</Link>
         </div>
         <div className="footer-col">
           <h4>Legal</h4>
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
+          <Link href="/privacy">Privacy Policy</Link>
+          <Link href="/terms">Terms of Service</Link>
         </div>
       </div>
       <div className="footer-bottom">

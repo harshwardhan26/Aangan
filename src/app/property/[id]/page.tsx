@@ -10,6 +10,7 @@ import type { Metadata } from 'next';
 import prisma from '../../../lib/prisma';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
+import MotionDiv from '../../../components/MotionDiv';
 
 const AMENITY_SYMBOLS: Record<string, string> = {
   'Parking': '🚗',
@@ -90,7 +91,12 @@ export default async function PropertyDetailsPage({ params }: { params: { id: st
         </div>
 
         {/* Two Column Layout */}
-        <div className="property-content-grid">
+        <MotionDiv 
+          className="property-content-grid"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
           
           {/* Left Column: Details */}
           <div className="property-main-details">
@@ -112,18 +118,28 @@ export default async function PropertyDetailsPage({ params }: { params: { id: st
                   <span className="spec-label">Rate</span>
                   <span className="spec-value">₹{Math.round(property.price / property.areaSqft).toLocaleString('en-IN')}/sqft</span>
                 </div>
+                {property.propertyType && (
+                  <div className="spec-item">
+                    <span className="spec-label">Type</span>
+                    <span className="spec-value">{property.propertyType}</span>
+                  </div>
+                )}
+                {property.purpose && (
+                  <div className="spec-item">
+                    <span className="spec-label">Purpose</span>
+                    <span className="spec-value" style={{ textTransform: 'capitalize' }}>For {property.purpose}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="detail-section">
               <h3>About this Property</h3>
-              <p>
-                Experience the perfect blend of modern luxury and comfort in this stunning {property.bedrooms} BHK {property.title.toLowerCase().includes('villa') ? 'villa' : 'apartment'}, located in the heart of {property.location}. 
-                Spanning {property.areaSqft} square feet, this meticulously designed home offers spacious living areas, premium finishes, and breathtaking views.
-              </p>
-              <p>
-                Ideal for families seeking a premium lifestyle in Kolhapur, it features Vastu-compliant architecture, abundant natural light, and top-tier amenities designed for your ultimate convenience and well-being.
-              </p>
+              {property.description ? (
+                <p style={{ whiteSpace: 'pre-line' }}>{property.description}</p>
+              ) : (
+                <p>No description provided for this property.</p>
+              )}
             </div>
 
             <div className="detail-section">
@@ -151,7 +167,7 @@ export default async function PropertyDetailsPage({ params }: { params: { id: st
             <LeadCaptureForm propertyId={property.id} sellerId={property.sellerId || ''} />
           </div>
 
-        </div>
+        </MotionDiv>
       </main>
 
       <Footer />

@@ -139,8 +139,8 @@ export default function SearchFilterSidebar() {
             step="500000" 
             value={maxPrice} 
             onChange={(e) => setMaxPrice(e.target.value)}
-            onMouseUp={() => updateFilters({ maxPrice })}
-            onTouchEnd={() => updateFilters({ maxPrice })}
+            onMouseUp={(e) => updateFilters({ maxPrice: e.currentTarget.value })}
+            onTouchEnd={(e) => updateFilters({ maxPrice: e.currentTarget.value })}
             className="filter-range-slider"
           />
           <div className="range-bounds">
