@@ -1,0 +1,18 @@
+
+> nextjs-temp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.1.111:3001
+- Environments: .env
+✓ Ready in 249ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          60783
+- Dir:          /Users/harshwardhanpatil/Desktop/Aangan.com
+- Log:          .next/dev/logs/next-development.log
+
+Run kill 60783 to stop it.
+[?25h
