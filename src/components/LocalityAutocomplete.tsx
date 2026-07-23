@@ -7,6 +7,7 @@ export default function LocalityAutocomplete({
   value,
   onChange,
   onSelect,
+  onSubmit,
   placeholder = "Search by locality...",
   inputClassName = ""
 }: {
