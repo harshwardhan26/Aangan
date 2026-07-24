@@ -7,15 +7,22 @@ import { getAuth } from "firebase-admin/auth";
 
 // Ensure Firebase Admin is initialised (singleton) — uses firebase-admin v12+ named exports
 if (getApps().length === 0) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey,
-      }),
-    });
+  try {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
+      initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey,
+        }),
+      });
+      console.log("Firebase Admin initialized successfully.");
+    } else {
+      console.warn("Firebase Admin missing credentials - skipping initialization.");
+    }
+  } catch (error) {
+    console.error("Firebase Admin initialization error:", error);
   }
 }
 
