@@ -14,6 +14,8 @@ export const metadata = {
   description: 'Step into your own Aangan — Search verified flats, luxury villas, and plots in Kolhapur with smart budget tools.',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const initialProperties = await getProperties({ skip: 0, take: 8 });
 
