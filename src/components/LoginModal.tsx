@@ -80,7 +80,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       try { recaptchaVerifierRef.current.clear(); } catch (_) {}
       recaptchaVerifierRef.current = null;
     }
+    // Also wipe the DOM node so reCAPTCHA can be freshly mounted next time
+    const container = document.getElementById('recaptcha-container');
+    if (container) container.innerHTML = '';
   };
+
 
   const handleClose = () => {
     cleanupRecaptcha();
