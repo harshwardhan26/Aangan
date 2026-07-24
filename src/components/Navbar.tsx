@@ -14,6 +14,12 @@ function NavbarContent() {
   const pathname = usePathname();
   const currentUser = session?.user as any;
 
+  React.useEffect(() => {
+    const handleOpenLogin = () => setIsLoginOpen(true);
+    window.addEventListener('open-login', handleOpenLogin);
+    return () => window.removeEventListener('open-login', handleOpenLogin);
+  }, []);
+
   const handleLogout = () => {
     signOut();
   };
@@ -26,21 +32,25 @@ function NavbarContent() {
   };
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <>
       <header className="navbar">
-        <Link href="/" className="logo">
-          <img src="/assets/images/logo-black.png" alt="Aangan" className="logo-img" />
-        </Link>
-        <nav className="nav-links">
-          <Link href="/search" className={!searchParams.get('type') && pathname !== '/sell' ? 'active' : ''}>Buy</Link>
-          <Link href="/search?type=rent" className={searchParams.get('type') === 'rent' ? 'active' : ''}>Rent</Link>
-          <Link href="/sell" className={pathname === '/sell' ? 'active' : ''}>Sell</Link>
-          <Link href="/search?type=coliving" className={searchParams.get('type') === 'coliving' ? 'active' : ''}>Co-living</Link>
+        <div className="nav-left">
+          <Link href="/" className="logo">
+            <img src="/assets/images/logo-black.png" alt="Aangan" className="logo-img" />
+          </Link>
+        </div>
+        <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          <Link href="/search" className={!searchParams.get('type') && pathname !== '/sell' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Buy</Link>
+          <Link href="/search?type=rent" className={searchParams.get('type') === 'rent' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Rent</Link>
+          <Link href="/sell" className={pathname === '/sell' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Sell</Link>
+          <Link href="/search?type=coliving" className={searchParams.get('type') === 'coliving' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Co-living</Link>
+          <Link href="/list-property" className="mobile-only-link" onClick={() => setIsMobileMenuOpen(false)}>+ List Property (Free)</Link>
         </nav>
         <div className="nav-actions">
-          <Link href="/list-property" className="btn-nav-sell">
+          <Link href="/list-property" className="btn-nav-sell hidden-mobile">
             <span className="plus-icon">+</span>
             List Property
             <span className="free-badge">FREE</span>
@@ -112,6 +122,18 @@ function NavbarContent() {
               Login
             </button>
           )}
+
+          <button 
+            className="mobile-menu-toggle" 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            )}
+          </button>
         </div>
       </header>
 

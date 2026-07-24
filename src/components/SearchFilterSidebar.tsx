@@ -48,6 +48,7 @@ export default function SearchFilterSidebar({ isModal, onClose }: { isModal?: bo
   const [amenities, setAmenities] = useState<string[]>(currentAmenities);
   const [occupancyType, setOccupancyType] = useState(currentOccupancyType);
   const [genderPreference, setGenderPreference] = useState(currentGenderPref);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
     const newType = searchParams.get('type') || 'sell';
@@ -114,14 +115,24 @@ export default function SearchFilterSidebar({ isModal, onClose }: { isModal?: bo
   };
 
   return (
-    <aside className="search-filter-sidebar">
+    <>
+      <button 
+        className="mobile-filter-toggle" 
+        onClick={() => setIsMobileOpen(true)}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filters
+      </button>
+
+      <aside className={`search-filter-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}>
       <div className="filter-card">
         <div className="filter-card-header">
           <h3>Filter Properties</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button className="btn-text-clear" onClick={handleClear}>Reset All</button>
+            <button className="btn-text-clear" onClick={handleClear}>Reset</button>
+            <button className="btn-text-clear mobile-filter-close" onClick={() => setIsMobileOpen(false)}>&times;</button>
             {isModal && onClose && (
-              <button className="btn-text-clear" onClick={onClose} style={{ fontSize: '1.2rem', padding: '0 5px' }}>&times;</button>
+              <button className="btn-text-clear" onClick={onClose}>&times;</button>
             )}
           </div>
         </div>
@@ -346,6 +357,12 @@ export default function SearchFilterSidebar({ isModal, onClose }: { isModal?: bo
           </button>
         </div>
       )}
+      {isMobileOpen && (
+        <div className="mobile-filter-actions">
+          <button className="btn-primary" onClick={() => setIsMobileOpen(false)}>Apply Filters</button>
+        </div>
+      )}
     </aside>
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { toggleSavedPropertyAction } from '@/actions/buyer';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 
 export default function SavePropertyButton({ propertyId, initialIsSaved = false }: { propertyId: string, initialIsSaved?: boolean }) {
@@ -15,7 +15,7 @@ export default function SavePropertyButton({ propertyId, initialIsSaved = false 
     e.stopPropagation();
 
     if (!user) {
-      signIn('google', { callbackUrl: window.location.href });
+      window.dispatchEvent(new Event('open-login'));
       return;
     }
 

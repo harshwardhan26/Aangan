@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import EmptyState from '@/components/EmptyState';
 import { getMyPropertiesAction } from '@/actions/dashboard';
 import { getSellerLeadsAction } from '@/actions/leads';
 import { getSavedPropertiesAction, getBuyerInquiriesAction } from '@/actions/buyer';
@@ -97,41 +98,38 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <main className="dashboard-container" style={{ padding: '60px 20px', maxWidth: '1200px', margin: '0 auto', minHeight: '60vh' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: '20px', marginBottom: '20px' }}>
+      <main className="dashboard-container page-container-standard">
+        <div className="page-header-flex">
           <div>
-            <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>My Dashboard</h1>
-            <p style={{ color: 'var(--text-muted)' }}>
+            <h1 className="page-title">My Dashboard</h1>
+            <p className="text-muted">
               Welcome back, {user.name}! {user.role === 'seller' ? 'Manage your properties and incoming leads.' : 'Manage your saved properties and inquiries.'}
             </p>
           </div>
           {user.role === 'seller' ? (
-            <Link href="/list-property" className="btn-primary" style={{ textDecoration: 'none' }}>+ Post New Property</Link>
+            <Link href="/list-property" className="btn-primary">+ Post New Property</Link>
           ) : (
-            <Link href="/search" className="btn-primary" style={{ textDecoration: 'none' }}>Explore Properties</Link>
+            <Link href="/search" className="btn-primary">Explore Properties</Link>
           )}
         </div>
 
         {user.role === 'seller' ? (
-          <div className="dashboard-tabs" style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--border)', marginBottom: '30px' }}>
+          <div className="dashboard-tabs">
             <button 
-              className={`auth-tab ${activeTab === 'properties' ? 'active' : ''}`} 
+              className={`dashboard-tab-item ${activeTab === 'properties' ? 'active' : ''}`} 
               onClick={() => setActiveTab('properties')}
-              style={{ background: 'none', border: 'none', padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer', borderBottom: activeTab === 'properties' ? '3px solid #000' : '3px solid transparent', fontWeight: activeTab === 'properties' ? '600' : '400' }}
             >
               My Properties
             </button>
             <button 
-              className={`auth-tab ${activeTab === 'leads' ? 'active' : ''}`} 
+              className={`dashboard-tab-item ${activeTab === 'leads' ? 'active' : ''}`} 
               onClick={() => setActiveTab('leads')}
-              style={{ background: 'none', border: 'none', padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer', borderBottom: activeTab === 'leads' ? '3px solid #000' : '3px solid transparent', fontWeight: activeTab === 'leads' ? '600' : '400' }}
             >
-              My Leads <span style={{ background: '#ef4444', color: 'white', borderRadius: '10px', padding: '2px 8px', fontSize: '0.8rem', marginLeft: '5px' }}>{leads.length}</span>
+              My Leads <span className="badge-notification">{leads.length}</span>
             </button>
             <Link 
               href="/dashboard/clients" 
-              className="auth-tab" 
-              style={{ textDecoration: 'none', color: 'inherit', background: 'none', border: 'none', padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer', borderBottom: '3px solid transparent', fontWeight: '400' }}
+              className="dashboard-tab-item"
             >
               Client Tracker
             </Link>
@@ -157,11 +155,18 @@ export default function DashboardPage() {
 
         {activeTab === 'properties' ? (
           properties.length === 0 ? (
-            <div className="empty-state" style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '12px' }}>
-              <h3 style={{ marginBottom: '10px' }}>No properties listed yet</h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>You haven't posted any properties on Aangan yet.</p>
-              <Link href="/list-property" className="btn-outline" style={{ textDecoration: 'none' }}>List a Property for Free</Link>
-            </div>
+            <EmptyState 
+              title="No properties listed yet"
+              description="You haven't posted any properties on Aangan yet."
+              actionText="List a Property for Free"
+              actionLink="/list-property"
+              icon={
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+              }
+            />
           ) : (
             <div className="property-grid">
               {properties.map(property => (
@@ -189,10 +194,18 @@ export default function DashboardPage() {
           )
         ) : activeTab === 'leads' ? (
            leads.length === 0 ? (
-            <div className="empty-state" style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '12px' }}>
-              <h3 style={{ marginBottom: '10px' }}>No leads yet</h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>When buyers inquire about your properties, their details will appear here.</p>
-            </div>
+            <EmptyState 
+              title="No leads yet"
+              description="When buyers inquire about your properties, their details will appear here."
+              icon={
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              }
+            />
           ) : (
             <div style={{ overflowX: 'auto', background: '#fff', borderRadius: '12px', border: '1px solid var(--border)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -234,11 +247,17 @@ export default function DashboardPage() {
           )
         ) : activeTab === 'saved' ? (
           savedProperties.length === 0 ? (
-            <div className="empty-state" style={{ textAlign: 'center', padding: '60px 20px', background: '#f8fafc', borderRadius: '12px' }}>
-              <h3 style={{ marginBottom: '10px' }}>No saved properties</h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>You haven't saved any properties yet. Click the heart icon on any property to save it here.</p>
-              <Link href="/search" className="btn-outline" style={{ textDecoration: 'none' }}>Browse Properties</Link>
-            </div>
+            <EmptyState 
+              title="No saved properties"
+              description="You haven't saved any properties yet. Click the heart icon on any property to save it here."
+              actionText="Browse Properties"
+              actionLink="/search"
+              icon={
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              }
+            />
           ) : (
             <div className="property-grid">
               {savedProperties.map(property => (

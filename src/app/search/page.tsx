@@ -1,10 +1,11 @@
 import PostHogEventTracker from "@/components/PostHogEventTracker";
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import EmptyState from '@/components/EmptyState';
 import SearchFilterSidebar from '@/components/SearchFilterSidebar';
 import { getProperties, SearchFilters } from '@/actions/properties';
 
@@ -188,20 +189,19 @@ export default async function SearchPage({
                 ))}
               </div>
             ) : (
-              <div className="search-empty-state">
-                <div className="empty-icon-wrapper">
+              <EmptyState 
+                title="No Properties Found"
+                description="We couldn't find any properties matching your exact filter criteria in Kolhapur."
+                actionText="Reset Filters & View All"
+                actionLink="/search"
+                icon={
                   <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     <line x1="8" y1="11" x2="14" y2="11"></line>
                   </svg>
-                </div>
-                <h3>No Properties Found</h3>
-                <p>We couldn't find any properties matching your exact filter criteria in Kolhapur.</p>
-                <Link href="/search" className="btn-primary mt-3" style={{ display: 'inline-block' }}>
-                  Reset Filters & View All
-                </Link>
-              </div>
+                }
+              />
             )}
           </section>
         </div>

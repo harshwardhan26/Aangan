@@ -37,30 +37,57 @@ export async function POST(req: NextRequest) {
     const formattedPhone = firebasePhone.replace(/^\+91(\d{10})$/, '+91 $1');
 
     const inputRole  = role  && role  !== 'undefined' ? role  : 'buyer';
-    const inputName  = name  && name  !== 'undefined' && name.trim()  !== '' ? name.trim()  : 'Kolhapur User';
+    const inputName  = name  && name  !== 'undefined' && name.trim()  !== '' ? name.trim()  : null;
     const inputEmail = email && email !== 'undefined' && email.trim() !== '' ? email.trim() : null;
 
-    // 3. Check if email is already taken by a different account
+    // 3. Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { phone: formattedPhone } });
+
+    if (existingUser) {
+      if (inputEmail && existingUser.email !== inputEmail) {
+        const existingWithEmail = await prisma.user.findUnique({ where: { email: inputEmail } });
+        if (existingWithEmail && existingWithEmail.phone !== formattedPhone) {
+          return NextResponse.json(
+            { error: 'This email is already linked to another account.' },
+            { status: 409 }
+          );
+        }
+      }
+      
+      let user = existingUser;
+      if (inputName || inputEmail) {
+        user = await prisma.user.update({
+          where: { phone: formattedPhone },
+          data: {
+            ...(inputName ? { name: inputName } : {}),
+            ...(inputEmail ? { email: inputEmail } : {}),
+          }
+        });
+      }
+      return NextResponse.json({
+        success: true,
+        user: { id: user.id, phone: user.phone, name: user.name, email: user.email, role: user.role },
+      });
+    }
+
+    // 4. New user scenario: Require a name
+    if (!inputName || inputName === 'Kolhapur User') {
+      return NextResponse.json({ error: 'NEW_USER_NEEDS_PROFILE' }, { status: 400 });
+    }
+
     if (inputEmail) {
       const existingWithEmail = await prisma.user.findUnique({ where: { email: inputEmail } });
-      if (existingWithEmail && existingWithEmail.phone !== formattedPhone) {
+      if (existingWithEmail) {
         return NextResponse.json(
-          { error: 'This email is already linked to another account. Use a different email.' },
+          { error: 'This email is already linked to another account.' },
           { status: 409 }
         );
       }
     }
 
-    // 4. Upsert user in Postgres
-    const user = await prisma.user.upsert({
-      where: { phone: formattedPhone },
-      update: {
-        role: inputRole,
-        ...(inputName !== 'Kolhapur User' ? { name: inputName } : {}),
-        ...(inputEmail ? { email: inputEmail } : {}),
-        isVerified: true,
-      },
-      create: {
+    // 5. Create new user in Postgres
+    const user = await prisma.user.create({
+      data: {
         phone: formattedPhone,
         name: inputName,
         email: inputEmail,

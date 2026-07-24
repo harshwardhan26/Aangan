@@ -24,6 +24,7 @@ export default function LocalityAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [originalValue, setOriginalValue] = useState(value);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     if (!isOpen && value !== originalValue) {
@@ -37,7 +38,11 @@ export default function LocalityAutocomplete({
       try {
         const results = await getUniqueLocalities(originalValue);
         setSuggestions(results);
-        setIsOpen(results.length > 0);
+        if (!isInitialMount.current) {
+          setIsOpen(results.length > 0);
+        } else {
+          isInitialMount.current = false;
+        }
       } catch (e) {
         console.error(e);
       } finally {

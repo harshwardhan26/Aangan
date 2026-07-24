@@ -90,7 +90,7 @@ export default function FeaturedProperties({ initialProperties }: { initialPrope
         <p>Handpicked exclusive properties for you</p>
       </div>
       
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
+      <div className="featured-pills-container">
         {[
           { id: 'all', label: 'All Properties' },
           { id: 'sell', label: 'Buy' },

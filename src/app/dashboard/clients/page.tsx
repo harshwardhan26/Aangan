@@ -49,28 +49,26 @@ export default async function ClientsPage() {
   return (
     <>
       <Navbar />
-      <main className="dashboard-container" style={{ padding: '60px 20px', maxWidth: '1200px', margin: '0 auto', minHeight: '60vh' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingBottom: '20px', marginBottom: '20px' }}>
+      <main className="dashboard-container page-container-standard">
+        <div className="page-header-flex">
           <div>
-            <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>My Dashboard</h1>
-            <p style={{ color: 'var(--text-muted)' }}>
+            <h1 className="page-title">My Dashboard</h1>
+            <p className="text-muted">
               Welcome back, {user.name}! Manage your properties and incoming leads.
             </p>
           </div>
-          <Link href="/list-property" className="btn-primary" style={{ textDecoration: 'none' }}>+ Post New Property</Link>
+          <Link href="/list-property" className="btn-primary">+ Post New Property</Link>
         </div>
 
-        <div className="dashboard-tabs" style={{ display: 'flex', gap: '20px', borderBottom: '1px solid var(--border)', marginBottom: '30px' }}>
+        <div className="dashboard-tabs">
           <Link 
             href="/dashboard" 
-            className="auth-tab" 
-            style={{ textDecoration: 'none', color: 'inherit', background: 'none', border: 'none', padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer', borderBottom: '3px solid transparent', fontWeight: '400' }}
+            className="dashboard-tab-item"
           >
             My Properties / Leads
           </Link>
           <button 
-            className="auth-tab active" 
-            style={{ background: 'none', border: 'none', padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer', borderBottom: '3px solid #000', fontWeight: '600' }}
+            className="dashboard-tab-item active"
           >
             Client Tracker
           </button>

@@ -1,5 +1,4 @@
 import { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -23,10 +22,6 @@ if (getApps().length === 0) {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
       name: "Phone",
       credentials: {
@@ -57,27 +52,50 @@ export const authOptions: NextAuthOptions = {
         const formattedPhone = firebasePhone.replace(/^\+91(\d{10})$/, '+91 $1');
 
         const inputRole  = credentials.role  && credentials.role  !== 'undefined' ? credentials.role  : 'buyer';
-        const inputName  = credentials.name  && credentials.name  !== 'undefined' && credentials.name.trim()  !== '' ? credentials.name.trim()  : 'Kolhapur User';
+        const inputName  = credentials.name  && credentials.name  !== 'undefined' && credentials.name.trim()  !== '' ? credentials.name.trim()  : null;
         const inputEmail = credentials.email && credentials.email !== 'undefined' && credentials.email.trim() !== '' ? credentials.email.trim() : null;
 
-        // 3. Guard against email collision
+        // 3. Check if user already exists
+        const existingUser = await prisma.user.findUnique({ where: { phone: formattedPhone } });
+
+        if (existingUser) {
+          // Guard against email collision if they provided a new email during profile update
+          if (inputEmail && existingUser.email !== inputEmail) {
+            const existingWithEmail = await prisma.user.findUnique({ where: { email: inputEmail } });
+            if (existingWithEmail && existingWithEmail.phone !== formattedPhone) {
+              throw new Error("This email is already linked to another account.");
+            }
+          }
+          
+          // Update existing user if they provided new info, otherwise just return them
+          if (inputName || inputEmail) {
+            return await prisma.user.update({
+              where: { phone: formattedPhone },
+              data: {
+                ...(inputName ? { name: inputName } : {}),
+                ...(inputEmail ? { email: inputEmail } : {}),
+              }
+            });
+          }
+          return existingUser;
+        }
+
+        // 4. New user scenario: Require a name
+        if (!inputName || inputName === 'Kolhapur User') {
+          throw new Error("NEW_USER_NEEDS_PROFILE");
+        }
+
+        // Guard against email collision for new user
         if (inputEmail) {
           const existingWithEmail = await prisma.user.findUnique({ where: { email: inputEmail } });
-          if (existingWithEmail && existingWithEmail.phone !== formattedPhone) {
+          if (existingWithEmail) {
             throw new Error("This email is already linked to another account.");
           }
         }
 
-        // 4. Upsert user in Postgres
-        const user = await prisma.user.upsert({
-          where: { phone: formattedPhone },
-          update: {
-            role: inputRole,
-            ...(inputName !== 'Kolhapur User' ? { name: inputName } : {}),
-            ...(inputEmail ? { email: inputEmail } : {}),
-            isVerified: true,
-          },
-          create: {
+        // 5. Create new user in Postgres
+        const user = await prisma.user.create({
+          data: {
             phone: formattedPhone,
             name: inputName,
             email: inputEmail,
